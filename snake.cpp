@@ -81,7 +81,6 @@ bool field(int X, int Y)
                 std::cout << " ";
                 }
             }
-            
         }
 
         std::cout << std::endl;
