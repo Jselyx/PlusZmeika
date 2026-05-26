@@ -105,16 +105,24 @@ bool allowMove(int X, int Y) {
     return true;
 }
 
-void gameLoop() {
-    snake snake;
+
+std::tuple<char, char, bool, bool, bool, bool, int, int> __init__() {
     char direction = 'U';
     char lastDirection;
-    int lastX = snake.X, lastY = snake.Y;
     bool isallowed;
     bool isEnd = false;
     bool isFruit = false;
     bool haveFruit = false;
     int fruitX, fruitY;
+
+    return std::make_tuple(direction, lastDirection, isallowed, isEnd, isFruit, haveFruit, fruitX, fruitY);
+}
+
+
+void gameLoop() {
+    snake snake;
+    auto [direction, lastDirection, isallowed, isEnd, isFruit, haveFruit, fruitX, fruitY] = __init__();
+    int lastX = snake.X, lastY = snake.Y;
     while (isEnd == false) {
         Sleep(250);
         lastDirection = lastKey(lastX, lastY, lastDirection);
