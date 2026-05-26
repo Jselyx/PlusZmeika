@@ -2,6 +2,7 @@
 #include <conio.h>
 #include <utility>
 #include <windows.h>
+#include <random>
 
 const int row = 30;
 const int column = 90;
@@ -10,9 +11,26 @@ const int column = 90;
 struct snake {
     int X = 14;
     int Y = 44;
+    int lenght = 1;
     char direction;
 };
 
+
+std::tuple<int, int, bool> fruitGenerator(int fruitX, int fruitY, bool isFruit) {
+    if (isFruit) {
+        return std::make_tuple(fruitX, fruitY, isFruit);
+    }
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> distr(1, row -2);
+    fruitX = distr(gen);
+
+    std::uniform_int_distribution<> distr2(1, column -2);
+    fruitY = distr2(gen);
+    isFruit = true;
+
+    return std::make_tuple(fruitX, fruitY, isFruit);
+}
 
 
 int gameMenu() {
@@ -45,7 +63,7 @@ char lastKey(int X, int Y, char direction) {
 }
 
 
-void field(int X, int Y) {
+void field(int X, int Y, int fruitX, int fruitY, bool isFruit) {
     system("cls");
     for (int i = 0; i < row; i++) {
         for (int j = 0; j < column; j++)
@@ -54,9 +72,11 @@ void field(int X, int Y) {
             std::cout<< "#";
         } else
         {
-            if (i == X && j == Y) 
-            {
+            if (i == X && j == Y) {
                 std::cout << "$";
+            }
+            if (i == fruitX && j == fruitY && isFruit == true) {
+                std::cout << "*";
             } else
             {
                 std::cout << " "; 
@@ -92,15 +112,21 @@ void gameLoop() {
     int lastX = snake.X, lastY = snake.Y;
     bool isallowed;
     bool isEnd = false;
+    bool isFruit = false;
+    bool haveFruit = false;
+    int fruitX, fruitY;
     while (isEnd == false) {
         Sleep(250);
         lastDirection = lastKey(lastX, lastY, lastDirection);
         auto [newX, newY] = iterationCalculator(lastDirection, lastX, lastY);
+        std::tie(fruitX, fruitY, haveFruit) = fruitGenerator(fruitX, fruitY, isFruit);
+        isFruit = haveFruit;
+
         lastX = newX;
         lastY = newY;
         isallowed = allowMove(lastX, lastY);
         if (isallowed) {
-            field(lastX, lastY);
+            field(lastX, lastY, fruitX, fruitY, isFruit);
         }
         else {
             std::cout << "Вы проиграли, уродина\n";
