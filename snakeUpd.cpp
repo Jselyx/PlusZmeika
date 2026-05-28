@@ -15,6 +15,16 @@ struct snake {
     char direction;
 };
 
+struct fruit {
+    int fruitX;
+    int fruitY;
+    bool isFruit = false;
+};
+
+
+bool isEated(int X, int Y, int fruitX, int fruitY) {
+    return X == fruitX && Y == fruitY;
+}
 
 std::tuple<int, int, bool> fruitGenerator(int fruitX, int fruitY, bool isFruit) {
     if (isFruit) {
@@ -70,14 +80,16 @@ void field(int X, int Y, int fruitX, int fruitY, bool isFruit) {
         if (i == 0 || i == row - 1 || j == 0 || j == column - 1)
         {
             std::cout<< "#";
-        } else
+        } 
+        else
         {
             if (i == X && j == Y) {
                 std::cout << "$";
             }
             if (i == fruitX && j == fruitY && isFruit == true) {
                 std::cout << "*";
-            } else
+            } 
+            else
             {
                 std::cout << " "; 
             }
@@ -106,35 +118,35 @@ bool allowMove(int X, int Y) {
 }
 
 
-std::tuple<char, char, bool, bool, bool, bool, int, int> __init__() {
+std::tuple<char, char, bool, bool, bool> __init__() {
     char direction = 'U';
     char lastDirection;
     bool isallowed;
     bool isEnd = false;
-    bool isFruit = false;
     bool haveFruit = false;
-    int fruitX, fruitY;
 
-    return std::make_tuple(direction, lastDirection, isallowed, isEnd, isFruit, haveFruit, fruitX, fruitY);
+    return std::make_tuple(direction, lastDirection, isallowed, isEnd, haveFruit);
 }
 
 
 void gameLoop() {
     snake snake;
-    auto [direction, lastDirection, isallowed, isEnd, isFruit, haveFruit, fruitX, fruitY] = __init__();
+    fruit fruit;
+    auto [direction, lastDirection, isallowed, isEnd, haveFruit] = __init__();
     int lastX = snake.X, lastY = snake.Y;
     while (isEnd == false) {
         Sleep(250);
         lastDirection = lastKey(lastX, lastY, lastDirection);
         auto [newX, newY] = iterationCalculator(lastDirection, lastX, lastY);
-        std::tie(fruitX, fruitY, haveFruit) = fruitGenerator(fruitX, fruitY, isFruit);
-        isFruit = haveFruit;
+        std::tie(fruit.fruitX, fruit.fruitY, haveFruit) = fruitGenerator(fruit.fruitX, fruit.fruitY, fruit.isFruit);
+        fruit.isFruit = haveFruit;
 
         lastX = newX;
         lastY = newY;
         isallowed = allowMove(lastX, lastY);
         if (isallowed) {
-            field(lastX, lastY, fruitX, fruitY, isFruit);
+            fruit.isFruit = isEated(lastX, lastY, fruit.fruitX, fruit.fruitY);
+            field(lastX, lastY, fruit.fruitX, fruit.fruitY, fruit.isFruit);
         }
         else {
             std::cout << "Вы проиграли, уродина\n";
