@@ -1,7 +1,14 @@
 #include <iostream>
-#include <conio.h>
 #include <utility>
-#include <windows.h>
+#ifdef _WIN32
+    #include <windows.h>
+    #include <conio.h>
+#else
+    #include <unistd.h>
+    #include <thread>
+    #include <ncurses.h>
+    #include <chrono>
+#endif
 #include <random>
 
 const int row = 30;
@@ -52,24 +59,20 @@ int gameMenu() {
 
 
 char lastKey(int X, int Y, char direction) {
-    if (GetAsyncKeyState(VK_UP)) {
-        direction = 'U';
-        return direction;
-    }
-    else if (GetAsyncKeyState(VK_DOWN)) {
-        direction = 'D';
-        return direction;
-    }
-    else if (GetAsyncKeyState(VK_LEFT)) {
-        direction = 'L';
-        return direction;
-    }
-    else if (GetAsyncKeyState(VK_RIGHT)) {
-        direction = 'R';
-        return direction;
-    }
+    #ifdef _WIN32
+    if (GetAsyncKeyState(VK_UP)) { direction = 'U'; }
+    else if (GetAsyncKeyState(VK_DOWN)) { direction = 'D'; }
+    else if (GetAsyncKeyState(VK_LEFT)) { direction = 'L'; }
+    else if (GetAsyncKeyState(VK_RIGHT)) { direction = 'R'; }
     return direction;
-
+    #else
+    int key = getch();
+    if (key == KEY_UP) { direction = 'U'; }
+    else if (key == KEY_DOWN) { direction = 'D'; }
+    else if (key == KEY_LEFT) { direction = 'L'; }
+    else if (key == KEY_RIGHT) { direction = 'R'; }
+    return direction;
+    #endif
 }
 
 
@@ -86,7 +89,7 @@ void field(int X, int Y, int fruitX, int fruitY, bool isFruit) {
             if (i == X && j == Y) {
                 std::cout << "$";
             }
-            if (i == fruitX && j == fruitY && isFruit == true) {
+            else if (i == fruitX && j == fruitY && isFruit == true) {
                 std::cout << "*";
             } 
             else
@@ -135,7 +138,7 @@ void gameLoop() {
     auto [direction, lastDirection, isallowed, isEnd, haveFruit] = __init__();
     int lastX = snake.X, lastY = snake.Y;
     while (isEnd == false) {
-        Sleep(250);
+        sleep(250);
         lastDirection = lastKey(lastX, lastY, lastDirection);
         auto [newX, newY] = iterationCalculator(lastDirection, lastX, lastY);
         std::tie(fruit.fruitX, fruit.fruitY, haveFruit) = fruitGenerator(fruit.fruitX, fruit.fruitY, fruit.isFruit);
@@ -151,17 +154,18 @@ void gameLoop() {
         else {
             std::cout << "Вы проиграли, уродина\n";
             isEnd = true;
+            return;
         }
     }
-    return;
 }
 
 bool userChoose(int choose) {
     if (choose == 1) {
         gameLoop();
+        return true;
     }
     else {
-        return 0;
+        return false;
     }
 }
 
@@ -171,6 +175,22 @@ void menuStarter() {
     if (!userChoose(choose)) {
         std::cout << "Игра завершена.";
     }
+}
+
+void ClearScreen() {
+    #ifdef _WIN32
+        system("cls");
+    #else
+        system("clear");
+    #endif
+}
+
+void sleep(int milliseconds) {
+    #ifdef _WIN32
+        Sleep(milliseconds);
+    #else
+        std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
+    #endif
 }
 
 int main() {
