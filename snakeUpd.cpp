@@ -1,5 +1,6 @@
 #include <iostream>
 #include <utility>
+#include <vector>
 #ifdef _WIN32
     #include <windows.h>
     #include <conio.h>
@@ -16,21 +17,23 @@ const int column = 90;
 
 
 struct snake {
-    int X = 14;
-    int Y = 44;
-    int lenght = 1;
+    std::vector<std::pair<int, int>> body = { {14, 44} };
+    int length = 1;
     char direction;
 };
 
 struct fruit {
-    int fruitX;
-    int fruitY;
+    int fruitX = 0;
+    int fruitY = 0;
     bool isFruit = false;
 };
 
 
-bool isEated(int X, int Y, int fruitX, int fruitY) {
-    return X == fruitX && Y == fruitY;
+bool isNoEated(int X, int Y, int fruitX, int fruitY) {
+    if (X == fruitX && Y == fruitY) {
+        return false;
+    }
+    return true;
 }
 
 std::tuple<int, int, bool> fruitGenerator(int fruitX, int fruitY, bool isFruit) {
@@ -76,25 +79,48 @@ char lastKey(int X, int Y, char direction) {
 }
 
 
-void field(int X, int Y, int fruitX, int fruitY, bool isFruit) {
+void snakeUpd(snake& s, int newHeadX, int newHeadY, bool ateFruit) {
+    s.body.insert(s.body.begin(), {newHeadX, newHeadY});
+    if (ateFruit) {
+        s.length++;
+    }
+    if (!ateFruit) {
+        s.body.pop_back();
+    }
+}
+
+
+void field(const std::vector<std::pair<int, int>>& body, int fruitX, int fruitY, bool isFruit) {
     system("cls");
     for (int i = 0; i < row; i++) {
-        for (int j = 0; j < column; j++)
-        if (i == 0 || i == row - 1 || j == 0 || j == column - 1)
-        {
+        for (int j = 0; j < column; j++) {
+            if (i == 0 || i == row - 1 || j == 0 || j == column - 1) 
+            {
             std::cout<< "#";
-        } 
-        else
-        {
-            if (i == X && j == Y) {
-                std::cout << "$";
-            }
-            else if (i == fruitX && j == fruitY && isFruit == true) {
-                std::cout << "*";
             } 
             else
             {
-                std::cout << " "; 
+                bool isSnakePart = false;
+                for (size_t k = 0; k < body.size(); k++) {
+                    if (body[k].first == i && body[k].second == j) {
+                        isSnakePart = true;
+                        break;
+                    }
+                }
+
+                if (isSnakePart) {
+                    if (body[0].first == i && body[0].second == j) {
+                        std::cout << "$"; // Голова
+                    } else {
+                        std::cout << "o"; // Хвост
+                    }
+                }
+                else if (i == fruitX && j == fruitY && isFruit) {
+                    std::cout << "*";
+                }    
+                else {
+                    std::cout << " "; 
+                }   
             }
         }
         std::cout<<"\n";
@@ -132,11 +158,21 @@ std::tuple<char, char, bool, bool, bool> __init__() {
 }
 
 
+void sleep(int milliseconds) {
+    #ifdef _WIN32
+        Sleep(milliseconds);
+    #else
+        std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
+    #endif
+}
+
+
 void gameLoop() {
     snake snake;
     fruit fruit;
     auto [direction, lastDirection, isallowed, isEnd, haveFruit] = __init__();
-    int lastX = snake.X, lastY = snake.Y;
+    int lastX = snake.body[0].first;
+    int lastY = snake.body[0].second;
     while (isEnd == false) {
         sleep(250);
         lastDirection = lastKey(lastX, lastY, lastDirection);
@@ -144,12 +180,16 @@ void gameLoop() {
         std::tie(fruit.fruitX, fruit.fruitY, haveFruit) = fruitGenerator(fruit.fruitX, fruit.fruitY, fruit.isFruit);
         fruit.isFruit = haveFruit;
 
-        lastX = newX;
-        lastY = newY;
         isallowed = allowMove(lastX, lastY);
         if (isallowed) {
-            fruit.isFruit = isEated(lastX, lastY, fruit.fruitX, fruit.fruitY);
-            field(lastX, lastY, fruit.fruitX, fruit.fruitY, fruit.isFruit);
+            bool ateFruit = !isNoEated(lastX, lastY, fruit.fruitX, fruit.fruitY);
+            if (ateFruit) {
+                fruit.isFruit = false;
+            }
+            snakeUpd(snake, lastX, lastY, ateFruit);
+            lastX = newX;
+            lastY = newY;
+            field(snake.body, fruit.fruitX, fruit.fruitY, fruit.isFruit);
         }
         else {
             std::cout << "Вы проиграли, уродина\n";
@@ -185,13 +225,6 @@ void ClearScreen() {
     #endif
 }
 
-void sleep(int milliseconds) {
-    #ifdef _WIN32
-        Sleep(milliseconds);
-    #else
-        std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
-    #endif
-}
 
 int main() {
     menuStarter();
